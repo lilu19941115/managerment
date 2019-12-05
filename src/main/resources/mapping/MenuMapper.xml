@@ -101,4 +101,25 @@
       status = #{status,jdbcType=VARCHAR}
     where aid = #{aid,jdbcType=VARCHAR}
   </update>
+
+  <select id="getByParam" resultMap="BaseResultMap" parameterType="com.entity.Menu">
+     select
+    <include refid="Base_Column_List" />
+    from menu
+    <where>
+      <if test="param.parentId!=null">
+        and parent_id = #{param.parentId,jdbcType=INTEGER}
+      </if>
+      <if test="param.name!=null">
+        and name like '%'+ #{param.name,jdbcType=VARCHAR}+'%'
+      </if>
+      <if test="param.url!=null">
+        and url = #{param.url,jdbcType=INTEGER}
+      </if>
+      <if test="param.status!=null">
+        and status = #{param.status,jdbcType=INTEGER}
+      </if>
+
+    </where>
+  </select>
 </mapper>

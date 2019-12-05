@@ -1,5 +1,8 @@
 package com.rest;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.common.api.ApiRest;
 import com.common.api.ApiResult;
 import com.common.enums.ApiCode;
@@ -50,10 +53,10 @@ public class MenuRest extends ApiRest {
     @GetMapping("/{aid}")
     public ApiResult<Menu> getByAid(@PathVariable String aid){
         Menu result=menuService.getMenu(aid);
-        if(result.getOperation()){
-            return ApiResult.success(ApiCode.SUCCESS,result);
-        }
+        if(result instanceof Menu&&!result.getOperation()){
         return ApiResult.fail(ApiCode.FAIAL_500);
+        }
+        return ApiResult.success(ApiCode.SUCCESS,result);
     }
 
     @GetMapping("/getList")
@@ -61,6 +64,32 @@ public class MenuRest extends ApiRest {
         PageResult<Menu> result=menuService.getMenus(param);
         if(result.getOperation()){
             return ApiResult.success(ApiCode.SUCCESS,result);
+        }
+        return ApiResult.fail(ApiCode.FAIAL_500);
+    }
+
+    @GetMapping("/getListByWapper")
+    public ApiResult<PageResult<Menu>> getListByWapper(@RequestBody PageParam<Menu> param){
+        Menu paramter=param.getObject();
+        PageResult<Menu> pageResult= null;
+        try {
+            QueryWrapper<Menu> queryWrapper=new QueryWrapper<>();
+            //按name 模糊查询，并且排除查询基类中的字段
+            queryWrapper.like("name",paramter.getName())
+                    .select(Menu.class,i->!i.getColumn().equals("code")
+                                        &&!i.getColumn().equals("operation"));
+            Page<Menu> page = new Page<>(param.getPageNum(),param.getPageSize());
+            IPage<Menu> iPage=menuService.getMenusByWrapper(page,queryWrapper);
+
+            pageResult = new PageResult<>(iPage);
+            pageResult.setOperation(true);
+        } catch (Exception e) {
+            pageResult=new PageResult<>();
+            pageResult.setOperation(false);
+            e.printStackTrace();
+        }
+        if(pageResult.getOperation()){
+            return ApiResult.success(ApiCode.SUCCESS,pageResult);
         }
         return ApiResult.fail(ApiCode.FAIAL_500);
     }

@@ -1,5 +1,7 @@
 package com.service;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.common.api.ApiService;
 import com.common.vo.PageParam;
 import com.common.vo.PageResult;
@@ -17,4 +19,5 @@ public interface MenuService extends ApiService {
     int updateMenu(Menu menu);
     Menu getMenu(String aid);
     PageResult<Menu> getMenus(PageParam<Menu> param);
+    IPage<Menu> getMenusByWrapper(IPage<Menu> iPage, Wrapper<Menu> wrapper);
 }
