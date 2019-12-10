@@ -25,4 +25,6 @@ public interface MenuMapper extends BaseMapper<Menu> {
 
     List<Menu> getByParam(IPage<Menu> page, @Param("param")Menu menu);
 
+    List<Menu> getAllList();
+
 }

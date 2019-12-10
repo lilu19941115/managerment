@@ -122,4 +122,10 @@
 
     </where>
   </select>
+
+  <select id="getAllList" resultMap="BaseResultMap" parameterType="com.entity.Menu">
+    select
+    <include refid="Base_Column_List" />
+    from menu
+  </select>
 </mapper>

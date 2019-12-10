@@ -1,16 +1,22 @@
 package com.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.common.redis.RedisService;
 import com.common.vo.PageParam;
 import com.common.vo.PageResult;
 import com.dao.MenuMapper;
 import com.entity.Menu;
 import com.service.MenuService;
+import com.utils.RedisUtils;
+import com.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +29,11 @@ public class MenuServiceImpl implements MenuService {
 
     @Autowired
     private MenuMapper menuMapper;
+    @Autowired
+    private RedisService redisService;
+    @Autowired
+    private RedisUtils redisUtils;
+
     //操作成功计数标志
     private Integer res;
     @Override
@@ -34,6 +45,9 @@ public class MenuServiceImpl implements MenuService {
             if(res!=1){
                 menu.setOperation(false);
             }
+            //操作后更新缓存
+            List<Menu> list=menuMapper.getAllList();
+            redisUtils.updateRedisListValue("Menu",list);
         } catch (Exception e) {
             e.printStackTrace();
             menu.setOperation(false);
@@ -47,6 +61,9 @@ public class MenuServiceImpl implements MenuService {
     public int deleteMenu(String aid) {
         try {
             res=menuMapper.deleteByPrimaryKey(aid);
+            //操作后更新缓存
+            List<Menu> list=menuMapper.getAllList();
+            redisUtils.updateRedisListValue("Menu",list);
         } catch (Exception e) {
             e.printStackTrace();
             res=0;
@@ -58,6 +75,9 @@ public class MenuServiceImpl implements MenuService {
     public int updateMenu(Menu menu) {
         try {
             res=menuMapper.updateByPrimaryKeySelective(menu);
+            //操作后更新缓存
+            List<Menu> list=menuMapper.getAllList();
+            redisUtils.updateRedisListValue("Menu",list);
         } catch (Exception e) {
             e.printStackTrace();
             res=0;
@@ -98,7 +118,28 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public IPage<Menu> getMenusByWrapper(IPage<Menu> iPage, Wrapper<Menu> wrapper) {
-        return menuMapper.selectPage(iPage,wrapper);
+    public List<Menu> getAllMenus() {
+        //从缓存中获取数据
+        String resultStr=redisService.get("Menu");
+        if(StringUtils.isEmpty(resultStr)){
+            List<Menu> list=menuMapper.getAllList();
+            String redisValue= JSON.toJSON(list).toString();
+            redisService.set("Menu",redisValue);
+            return list;
+        }
+        List<Menu> result= JSONObject.parseArray(resultStr,Menu.class);
+        return result;
+    }
+
+    @Override
+    public IPage<Menu> getMenusByWrapper(PageParam<Menu> param) {
+        Menu menu=param.getObject();
+        IPage<Menu> page=new Page<>(param.getPageNum(),param.getPageSize());
+        QueryWrapper<Menu> queryWrapper=new QueryWrapper<>();
+        queryWrapper.like("name",menu.getName())
+                    .orderBy(true,"asc".equals(param.getOrder()),param.getOrderBy())
+                    .select(Menu.class,i->!i.getColumn().equals("code")
+                        &&!i.getColumn().equals("operation"));
+        return menuMapper.selectPage(page,queryWrapper);
     }
 }

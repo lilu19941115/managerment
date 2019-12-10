@@ -19,5 +19,6 @@ public interface MenuService extends ApiService {
     int updateMenu(Menu menu);
     Menu getMenu(String aid);
     PageResult<Menu> getMenus(PageParam<Menu> param);
-    IPage<Menu> getMenusByWrapper(IPage<Menu> iPage, Wrapper<Menu> wrapper);
+    List<Menu>  getAllMenus();
+    IPage<Menu> getMenusByWrapper(PageParam<Menu> param);
 }

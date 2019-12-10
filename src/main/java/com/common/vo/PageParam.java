@@ -10,6 +10,6 @@ public class PageParam<T> {
     private Integer pageSize;
     private Integer pageNum;
     private T  object;
-    private String sortBy;
+    private String[] orderBy;
     private String order;
 }

@@ -1,8 +1,6 @@
 package com.rest;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.common.api.ApiRest;
 import com.common.api.ApiResult;
 import com.common.enums.ApiCode;
@@ -10,8 +8,12 @@ import com.common.vo.PageParam;
 import com.common.vo.PageResult;
 import com.entity.Menu;
 import com.service.MenuService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 /**
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/menu")
 public class MenuRest extends ApiRest {
+    private static final Logger LOG= LoggerFactory.getLogger(ApiRest.class);
     @Autowired
     private MenuService menuService;
 
@@ -53,10 +56,10 @@ public class MenuRest extends ApiRest {
     @GetMapping("/{aid}")
     public ApiResult<Menu> getByAid(@PathVariable String aid){
         Menu result=menuService.getMenu(aid);
-        if(result instanceof Menu&&!result.getOperation()){
-        return ApiResult.fail(ApiCode.FAIAL_500);
+        if(result.getOperation()){
+            return ApiResult.success(ApiCode.SUCCESS,result);
         }
-        return ApiResult.success(ApiCode.SUCCESS,result);
+        return ApiResult.fail(ApiCode.FAIAL_500);
     }
 
     @GetMapping("/getList")
@@ -68,29 +71,16 @@ public class MenuRest extends ApiRest {
         return ApiResult.fail(ApiCode.FAIAL_500);
     }
 
-    @GetMapping("/getListByWapper")
-    public ApiResult<PageResult<Menu>> getListByWapper(@RequestBody PageParam<Menu> param){
-        Menu paramter=param.getObject();
-        PageResult<Menu> pageResult= null;
-        try {
-            QueryWrapper<Menu> queryWrapper=new QueryWrapper<>();
-            //按name 模糊查询，并且排除查询基类中的字段
-            queryWrapper.like("name",paramter.getName())
-                    .select(Menu.class,i->!i.getColumn().equals("code")
-                                        &&!i.getColumn().equals("operation"));
-            Page<Menu> page = new Page<>(param.getPageNum(),param.getPageSize());
-            IPage<Menu> iPage=menuService.getMenusByWrapper(page,queryWrapper);
+    @GetMapping("/getAllMenus")
+    public ApiResult<List<Menu>> getAllMenus(){
+        List<Menu> result=menuService.getAllMenus();
+        return ApiResult.success(ApiCode.SUCCESS,result);
+    }
 
-            pageResult = new PageResult<>(iPage);
-            pageResult.setOperation(true);
-        } catch (Exception e) {
-            pageResult=new PageResult<>();
-            pageResult.setOperation(false);
-            e.printStackTrace();
-        }
-        if(pageResult.getOperation()){
-            return ApiResult.success(ApiCode.SUCCESS,pageResult);
-        }
-        return ApiResult.fail(ApiCode.FAIAL_500);
+    @GetMapping("/getListByWrapper")
+    public ApiResult<PageResult<Menu>> getListByWrapper(@RequestBody PageParam<Menu> param){
+        IPage<Menu> result=menuService.getMenusByWrapper(param);
+        PageResult pageResult=new PageResult(result);
+        return ApiResult.success(ApiCode.SUCCESS,pageResult);
     }
 }
